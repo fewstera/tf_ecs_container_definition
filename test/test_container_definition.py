@@ -19,17 +19,16 @@ class TestContainerDefinition(unittest.TestCase):
         self.workdir = tempfile.mkdtemp()
         self.module_path = os.getcwd()
 
-        check_call([
-            'terraform', 'get', self.module_path
-            ],
-            cwd=self.workdir)
+        check_call(['terraform', 'init', self.module_path], cwd=self.workdir)
+        check_call(['terraform', 'get', self.module_path], cwd=self.workdir)
 
     def tearDown(self):
+        print('Tearing down')
         check_call(
             ['terraform', 'destroy', '-force'] +
-            self.last_args +
-            [self.module_path],
-            cwd=self.workdir)
+            self.last_args + [self.module_path],
+            cwd=self.workdir
+        )
 
         if os.path.isdir(self.workdir):
             shutil.rmtree(self.workdir)
@@ -39,28 +38,29 @@ class TestContainerDefinition(unittest.TestCase):
         with open(varsmap_file, 'w') as f:
             f.write(json.dumps(varsmap))
 
-        args = sum([
-            ['-var', '{}={}'.format(key, val)]
-            for key, val in variables.items()
-            ], [])
+        args = sum(
+            [
+                ['-var', '{}={}'.format(key, val)]
+                for key, val in variables.items()
+            ], []
+        )
+        print('args', args)
 
         args += ['-var-file', varsmap_file]
 
         self.last_args = args
 
-        check_call([
-            'terraform', 'apply',
-            '-no-color'
-            ] + args +
-            [self.module_path],
+        check_call(
+            ['terraform', 'apply', '-no-color'] + args + [self.module_path],
             cwd=self.workdir
         )
 
-        output = check_output([
-            'terraform', 'output', '-json', 'rendered'],
-            cwd=self.workdir).decode('utf8')
+        output = check_output(
+            ['terraform', 'output', '-json', 'rendered'],
+            cwd=self.workdir
+        ).decode('utf8')
 
-        print(output)
+        print('output', output)
         parsed_output = json.loads(output)["value"]
         parsed_definition = json.loads(parsed_output)
         return parsed_definition
@@ -73,7 +73,8 @@ class TestContainerDefinition(unittest.TestCase):
             'cpu': 1024,
             'memory': 1024,
             'container_port': 8001,
-            'nofile_soft_ulimit': 1000
+            'nofile_soft_ulimit': 1000,
+            'labels': {}
         }
         varsmap = {}
 
@@ -87,7 +88,10 @@ class TestContainerDefinition(unittest.TestCase):
         assert definition['memory'] == 1024
         assert definition['essential']
 
-        assert {'softLimit': 1000, 'name': 'nofile', 'hardLimit': 65535} in definition['ulimits']
+        assert {
+            'softLimit': 1000, 'name': 'nofile',
+            'hardLimit': 65535
+        } in definition['ulimits']
         assert {'containerPort': 8001} in definition['portMappings']
 
     def test_override_port_mappings(self):
@@ -107,7 +111,7 @@ class TestContainerDefinition(unittest.TestCase):
         definition = self._apply_and_parse(variables, varsmap)
 
         # then
-        assert [ { 'containerPort': 7654 } ] == definition['portMappings']
+        assert [{'containerPort': 7654}] == definition['portMappings']
 
     def test_labels(self):
         # Given
@@ -256,3 +260,47 @@ class TestContainerDefinition(unittest.TestCase):
 
         # then
         assert definition['linuxParameters']['initProcessEnabled']
+
+    def test_command(self):
+        # Given
+        variables = {
+            'name': 'test-' + str(int(time.time() * 1000)),
+            'image': '123',
+            'cpu': 1024,
+            'memory': 1024
+        }
+        varsmap = {
+            'command': ["/bin/bash", "-c", "cat"]
+        }
+
+        # when
+        definition = self._apply_and_parse(variables, varsmap)
+
+        # then
+        assert definition['name'] == variables['name']
+        assert definition['image'] == '123'
+        assert definition['cpu'] == 1024
+        assert definition['memory'] == 1024
+        assert definition['command'] == ["/bin/bash", "-c", "cat"]
+
+    def test_command_empty(self):
+        # Given
+        variables = {
+            'name': 'test-' + str(int(time.time() * 1000)),
+            'image': '123',
+            'cpu': 1024,
+            'memory': 1024
+        }
+        varsmap = {
+            'command': []
+        }
+
+        # when
+        definition = self._apply_and_parse(variables, varsmap)
+
+        # then
+        assert definition['name'] == variables['name']
+        assert definition['image'] == '123'
+        assert definition['cpu'] == 1024
+        assert definition['memory'] == 1024
+        assert definition['command'] is None

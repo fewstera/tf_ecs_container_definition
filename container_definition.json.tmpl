@@ -1,10 +1,11 @@
-  {
+{
     "name": "${container_name}",
     "essential": true,
     "image": "${image}",
     "portMappings": ${port_mappings},
     "cpu": ${cpu},
     "memory": ${mem},
+    "command": ${command},
     "environment": ${container_env},
     "dockerLabels": ${labels},
     "mountPoints": [
