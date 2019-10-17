@@ -71,3 +71,14 @@ variable "platform_secrets" {
   type    = "list"
   default = []
 }
+
+variable "enable_cloudwatch_logs" {
+  description = "Should the ECS containers logs be shipped to cloudwatch using awslogs"
+  default     = "false"
+}
+
+#variable "region" {
+#description = "The AWS region. Used by awslogs to ship logs to cloudwatch"
+#type        = "string"
+#default     = "false"
+#}

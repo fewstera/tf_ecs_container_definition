@@ -305,6 +305,22 @@ class TestContainerDefinition(unittest.TestCase):
         assert definition['memory'] == 1024
         assert definition['command'] is None
 
+    def test_enable_cloudwatch_logs(self):
+        # Given
+        variables = {
+            'name': 'test-' + str(int(time.time() * 1000)),
+            'image': '123',
+            'enable_cloudwatch_logs': 'true'
+        }
+        varsmap = {}
+
+        # when
+        definition = self._apply_and_parse(variables, varsmap)
+
+        # then
+        assert definition['logConfiguration']['options']['awslogs-group'] == '/ecs/' + variables['name']
+        assert definition['logConfiguration']['options']['awslogs-stream-prefix'] == 'ecs'
+        assert definition['logConfiguration']['options']['awslogs-region'] == 'eu-west-1'
 
 class TestEncodeSecrets(unittest.TestCase):
 

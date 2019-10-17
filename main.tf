@@ -28,8 +28,12 @@ data "template_file" "container_definitions" {
     mountpoint_sourceVolume  = "${lookup(var.mountpoint, "sourceVolume", "none")}"
     mountpoint_containerPath = "${lookup(var.mountpoint, "containerPath", "none")}"
     mountpoint_readOnly      = "${lookup(var.mountpoint, "readOnly", false)}"
+    enable_cloudwatch_logs   = "false"
+    region                   = "${data.aws_region.current.name}"
   }
 }
+
+data "aws_region" "current" {}
 
 data "external" "encode_env" {
   program = ["python", "${path.module}/encode_env.py"]
