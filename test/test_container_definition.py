@@ -312,13 +312,17 @@ class TestContainerDefinition(unittest.TestCase):
             'image': '123',
             'enable_cloudwatch_logs': 'true'
         }
-        varsmap = {}
+        varsmap = {
+            'labels': {
+                'env': 'test',
+            }
+        }
 
         # when
         definition = self._apply_and_parse(variables, varsmap)
 
         # then
-        assert definition['logConfiguration']['options']['awslogs-group'] == '/ecs/' + variables['name']
+        assert definition['logConfiguration']['options']['awslogs-group'] == '/ecs/test-' + variables['name']
         assert definition['logConfiguration']['options']['awslogs-stream-prefix'] == 'ecs'
         assert definition['logConfiguration']['options']['awslogs-region'] == 'eu-west-1'
 

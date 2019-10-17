@@ -29,7 +29,7 @@
     ${enable_cloudwatch_logs == "true" ? "" :
         format(
           "\"logConfiguration\": {\"logDriver\": \"awslogs\", \"secretOptions\": null, \"options\": { \"awslogs-group\": \"%s\", \"awslogs-region\": \"%s\", \"awslogs-stream-prefix\": \"%s\" } },",
-          "/ecs/${container_name}",
+          "/ecs/${env}-${container_name}",
           region,
           "ecs"
         )

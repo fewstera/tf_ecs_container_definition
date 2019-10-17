@@ -24,6 +24,7 @@ data "template_file" "container_definitions" {
     secrets            = "${data.external.encode_secrets.result["secrets"]}"
     labels             = "${jsonencode(var.labels)}"
     nofile_soft_ulimit = "${var.nofile_soft_ulimit}"
+    env                = "${local.env}"
 
     mountpoint_sourceVolume  = "${lookup(var.mountpoint, "sourceVolume", "none")}"
     mountpoint_containerPath = "${lookup(var.mountpoint, "containerPath", "none")}"
